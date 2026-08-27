@@ -1,0 +1,22 @@
+{
+  "reachable": true,
+  "latencyMs": 100,
+  "capabilities": {
+    "tools": [
+      { "name": "read_file", "schema": { "path": "string" } },
+      { "name": "list_dir", "schema": { "path": "string" } },
+      { "name": "write_file", "schema": { "path": "string", "content": "string" } }
+    ],
+    "resources": [
+      { "name": "config", "uri": "config://app" }
+    ],
+    "prompts": []
+  },
+  "samples": [
+    { "latencyMs": 100, "error": false, "response": { "content": "file contents 1" } },
+    { "latencyMs": 150, "error": false, "response": { "content": "file contents 2" } },
+    { "latencyMs": 120, "error": false, "response": { "content": "file contents 3" } }
+  ],
+  "serverRequiresAuth": false,
+  "serverAcceptsAuth": false
+}

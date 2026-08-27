@@ -1,0 +1,7 @@
+{
+  "tools": [
+    { "name": "read_file", "schema": { "path": "string" } },
+    { "name": "list_dir", "schema": { "path": "string" } },
+    { "name": "write_file", "schema": { "path": "string", "content": "string" } }
+  ]
+}

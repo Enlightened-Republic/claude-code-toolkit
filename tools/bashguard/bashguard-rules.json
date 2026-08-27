@@ -1,0 +1,355 @@
+{
+  "defaultAction": "allow",
+  "rules": [
+    {
+      "id": "rm-rf-root",
+      "description": "rm -rf operating on filesystem root or $HOME",
+      "match": { "command_regex": "\\brm\\s+(-[rRfv]+\\s+)+(/|~|\\$HOME|\\.)\\s*(\\s|$)" },
+      "action": "block",
+      "reason": "rm -rf at filesystem root or $HOME would wipe substantial data"
+    },
+    {
+      "id": "rm-rf-etc",
+      "description": "rm -rf under /etc, /usr, /var",
+      "match": { "command_regex": "\\brm\\s+(-[rRfv]+\\s+)+(/etc|/usr|/var|/boot|/lib|/bin|/sbin)(/|\\s|$)" },
+      "action": "block",
+      "reason": "rm -rf under system directories would brick the OS"
+    },
+    {
+      "id": "git-push-force-main",
+      "description": "git push --force to main/master",
+      "match": { "command_regex": "git\\s+push\\s+(.*\\s)?(-f|--force)(\\s|$)(?!.*(--force-with-lease))" },
+      "action": "block",
+      "reason": "git push --force to main/master overwrites upstream and can lose teammates' work"
+    },
+    {
+      "id": "git-reset-hard",
+      "description": "git reset --hard (destructive on unpushed commits)",
+      "match": { "command_regex": "git\\s+reset\\s+(--hard)\\b" },
+      "action": "warn",
+      "reason": "git reset --hard discards uncommitted/unpushed changes"
+    },
+    {
+      "id": "git-branch-delete-force",
+      "description": "git branch -D (force delete unmerged branches)",
+      "match": { "command_regex": "git\\s+branch\\s+-D\\b" },
+      "action": "warn",
+      "reason": "git branch -D force-deletes unmerged branches; data loss risk"
+    },
+    {
+      "id": "git-checkout-discard",
+      "description": "git checkout . / git restore . (discard working tree)",
+      "match": { "command_regex": "git\\s+(checkout|restore)\\s+\\." },
+      "action": "warn",
+      "reason": "git checkout . / git restore . discards all uncommitted changes"
+    },
+    {
+      "id": "git-clean-force",
+      "description": "git clean -fd (delete untracked files)",
+      "match": { "command_regex": "git\\s+clean\\s+(-[fdxiv]+\\s*)+" },
+      "action": "warn",
+      "reason": "git clean -fd deletes untracked files irreversibly"
+    },
+    {
+      "id": "curl-pipe-shell",
+      "description": "curl piped directly to sh/bash",
+      "match": { "command_regex": "(curl|wget)\\s+.+\\|\\s*(sudo\\s+)?(sh|bash|zsh|pwsh)\\b" },
+      "action": "block",
+      "reason": "Piping network content to a shell is a major supply-chain risk"
+    },
+    {
+      "id": "sudo-any",
+      "description": "Any sudo invocation",
+      "match": { "command_regex": "^\\s*sudo\\s+" },
+      "action": "block",
+      "reason": "sudo grants root; allowlist explicitly if intentional"
+    },
+    {
+      "id": "runas-windows",
+      "description": "Windows runas/Start-Process -Verb RunAs",
+      "match": { "command_regex": "\\b(runas|Start-Process\\s+.*-Verb\\s+RunAs)\\b" },
+      "action": "block",
+      "reason": "Privilege escalation on Windows; allowlist explicitly if intentional"
+    },
+    {
+      "id": "kill-init",
+      "description": "kill -9 1 (kill init)",
+      "match": { "command_regex": "kill\\s+-9\\s+1\\b" },
+      "action": "block",
+      "reason": "Killing PID 1 will reboot or panic the host"
+    },
+    {
+      "id": "killall-wildcard",
+      "description": "killall with broad wildcard",
+      "match": { "command_regex": "killall\\s+(-9\\s+)?\\*" },
+      "action": "block",
+      "reason": "killall * will terminate every user process"
+    },
+    {
+      "id": "env-leak",
+      "description": "Bare env / printenv / set commands (potential secret exfil)",
+      "match": { "command_regex": "^\\s*(env|printenv|set)\\s*(>|\\|)" },
+      "action": "warn",
+      "reason": "env/printenv redirected may exfiltrate secrets"
+    },
+    {
+      "id": "cat-dotenv",
+      "description": "Reading .env files",
+      "match": { "command_regex": "(cat|head|tail|less|more|type|Get-Content)\\s+.*\\.env(\\b|\\.|/|\\s|$)" },
+      "action": "warn",
+      "reason": ".env files typically contain secrets"
+    },
+    {
+      "id": "ssh-key-read",
+      "description": "Reading SSH private keys",
+      "match": { "command_regex": "(cat|head|tail|Get-Content)\\s+.*(\\.ssh/id_|/private_key|/id_rsa|/id_ed25519)" },
+      "action": "block",
+      "reason": "SSH private key read; high secret-exfil risk"
+    },
+    {
+      "id": "aws-credentials-read",
+      "description": "Reading AWS credentials",
+      "match": { "command_regex": "(cat|head|Get-Content)\\s+.*\\.aws/(credentials|config)" },
+      "action": "warn",
+      "reason": "AWS credentials read"
+    },
+    {
+      "id": "etc-passwd-read",
+      "description": "Reading /etc/passwd or /etc/shadow",
+      "match": { "command_regex": "(cat|head|Get-Content)\\s+/etc/(passwd|shadow)" },
+      "action": "warn",
+      "reason": "System credentials file read"
+    },
+    {
+      "id": "docker-privileged",
+      "description": "docker run --privileged",
+      "match": { "command_regex": "docker\\s+(run|create).*(--privileged|--cap-add\\s+ALL|-v\\s+/:)" },
+      "action": "block",
+      "reason": "Privileged Docker container has full host access"
+    },
+    {
+      "id": "npm-install-url",
+      "description": "npm install from arbitrary URL/git",
+      "match": { "command_regex": "npm\\s+(install|i|add)\\s+.*(https?://|git\\+|github:)" },
+      "action": "warn",
+      "reason": "Installing from arbitrary git/URL bypasses npm registry vetting"
+    },
+    {
+      "id": "pip-install-no-deps-git",
+      "description": "pip install from git",
+      "match": { "command_regex": "pip\\s+install\\s+.*(git\\+https://|--no-deps)" },
+      "action": "warn",
+      "reason": "Installing from arbitrary git or skipping deps bypasses normal vetting"
+    },
+    {
+      "id": "chmod-world-writable",
+      "description": "chmod 777 / chmod -R 777",
+      "match": { "command_regex": "chmod\\s+(-R\\s+)?777\\b" },
+      "action": "warn",
+      "reason": "World-writable permissions are a security smell"
+    },
+    {
+      "id": "aws-terminate-instances",
+      "description": "aws ec2 terminate-instances",
+      "match": { "command_regex": "aws\\s+ec2\\s+terminate-instances\\b" },
+      "action": "block",
+      "reason": "Terminates EC2 instances irreversibly"
+    },
+    {
+      "id": "gcloud-delete-instances",
+      "description": "gcloud compute instances delete",
+      "match": { "command_regex": "gcloud\\s+compute\\s+instances\\s+delete\\b" },
+      "action": "block",
+      "reason": "Deletes GCE instances irreversibly"
+    },
+    {
+      "id": "dropdb-postgres",
+      "description": "dropdb or DROP DATABASE",
+      "match": { "command_regex": "(dropdb\\b|DROP\\s+DATABASE\\b|DROP\\s+TABLE\\b)" },
+      "action": "block",
+      "reason": "Drops database/table irreversibly"
+    },
+    {
+      "id": "history-clear",
+      "description": "Clearing shell history",
+      "match": { "command_regex": "(history\\s+-c|rm\\s+.*\\.bash_history|Clear-History)" },
+      "action": "warn",
+      "reason": "Clearing history is suspicious (forensic-evasion smell)"
+    },
+    {
+      "id": "iptables-flush",
+      "description": "iptables -F (firewall flush)",
+      "match": { "command_regex": "iptables\\s+-F\\b" },
+      "action": "block",
+      "reason": "Flushes firewall rules; security exposure"
+    },
+    {
+      "id": "dd-to-disk",
+      "description": "dd writing to a block device",
+      "match": { "command_regex": "dd\\s+.*of=/dev/(sd|nvme|mmcblk|disk)" },
+      "action": "block",
+      "reason": "dd to a block device overwrites disks"
+    },
+    {
+      "id": "mkfs",
+      "description": "mkfs (format filesystem)",
+      "match": { "command_regex": "\\bmkfs(\\.\\w+)?\\s+/dev/" },
+      "action": "block",
+      "reason": "Formats a block device irreversibly"
+    },
+    {
+      "id": "shutdown-reboot",
+      "description": "shutdown / reboot / halt / poweroff",
+      "match": { "command_regex": "^\\s*(shutdown|reboot|halt|poweroff|init\\s+[06])\\b" },
+      "action": "warn",
+      "reason": "System power state change"
+    },
+    {
+      "id": "registry-edit-windows",
+      "description": "Windows registry edits via reg.exe",
+      "match": { "command_regex": "\\breg\\s+(add|delete|import)\\b" },
+      "action": "warn",
+      "reason": "Windows registry mutation"
+    },
+    {
+      "id": "scheduled-task-create",
+      "description": "Creating Windows scheduled task or cron persistence",
+      "match": { "command_regex": "(schtasks\\s+/create|crontab\\s+-e|crontab\\s+\\S+\\.txt)" },
+      "action": "warn",
+      "reason": "Persistence mechanism — surface for review"
+    },
+    {
+      "id": "ssh-add-known-hosts",
+      "description": "Appending to ~/.ssh/authorized_keys or known_hosts",
+      "match": { "command_regex": ">>\\s+.*\\.ssh/(authorized_keys|known_hosts)" },
+      "action": "warn",
+      "reason": "Adding SSH keys grants persistent access"
+    },
+    {
+      "id": "ufw-disable",
+      "description": "Disabling UFW firewall",
+      "match": { "command_regex": "ufw\\s+disable\\b" },
+      "action": "block",
+      "reason": "Disabling firewall increases exposure"
+    },
+    {
+      "id": "systemctl-stop-security",
+      "description": "Stopping security daemons",
+      "match": { "command_regex": "systemctl\\s+(stop|disable)\\s+(apparmor|selinux|firewalld|auditd|clamav)" },
+      "action": "warn",
+      "reason": "Disabling security service"
+    },
+    {
+      "id": "windows-defender-disable",
+      "description": "Disabling Windows Defender",
+      "match": { "command_regex": "(Set-MpPreference\\s+-DisableRealtimeMonitoring\\s+\\$true|sc\\s+stop\\s+WinDefend)" },
+      "action": "block",
+      "reason": "Disabling Windows Defender; security exposure"
+    },
+    {
+      "id": "git-config-global-user",
+      "description": "Editing global git user/email",
+      "match": { "command_regex": "git\\s+config\\s+--global\\s+user\\." },
+      "action": "warn",
+      "reason": "Editing global git identity"
+    },
+    {
+      "id": "chown-recursive-root",
+      "description": "chown -R targeting / or ~",
+      "match": { "command_regex": "chown\\s+(-R\\s+)+.*\\s(/|~|\\$HOME)\\s*$" },
+      "action": "block",
+      "reason": "Recursive chown at root or $HOME"
+    },
+    {
+      "id": "echo-to-bashrc",
+      "description": "Appending to shell rc files",
+      "match": { "command_regex": ">>\\s+~?/(\\.bashrc|\\.zshrc|\\.profile|\\.bash_profile|\\$PROFILE)" },
+      "action": "warn",
+      "reason": "Shell rc mutation — persistence vector"
+    },
+    {
+      "id": "wget-output-tmp-exec",
+      "description": "wget/curl downloads to /tmp then exec",
+      "match": { "command_regex": "(wget|curl).*(/tmp/|/var/tmp/).*(\\s|;|&&)\\s*(chmod\\s+\\+x|sh\\s|bash\\s|\\./)" },
+      "action": "block",
+      "reason": "Download-and-execute pattern"
+    },
+    {
+      "id": "base64-decode-exec",
+      "description": "base64 -d piped to shell",
+      "match": { "command_regex": "base64\\s+(-d|--decode).*\\|\\s*(sh|bash|pwsh|python)" },
+      "action": "block",
+      "reason": "Decoding and executing base64 content is obfuscation"
+    },
+    {
+      "id": "nc-shell",
+      "description": "netcat reverse shell pattern",
+      "match": { "command_regex": "n(c|cat)\\s+.*-e\\s+(/bin/(sh|bash)|/usr/bin/python)" },
+      "action": "block",
+      "reason": "netcat -e shell exec is a reverse-shell pattern"
+    },
+    {
+      "id": "stripe-secret-key-print",
+      "description": "Printing Stripe live secret keys",
+      "match": { "command_regex": "(echo|printf|Write-Output)\\s+.*sk_live_" },
+      "action": "warn",
+      "reason": "Live Stripe secret key in stdout"
+    },
+    {
+      "id": "rm-package-lock",
+      "description": "Deleting lock files",
+      "match": { "command_regex": "rm\\s+(-f\\s+)?(package-lock\\.json|yarn\\.lock|pnpm-lock\\.yaml|Cargo\\.lock|poetry\\.lock|Gemfile\\.lock)" },
+      "action": "warn",
+      "reason": "Deleting lock files; dependency drift risk"
+    },
+    {
+      "id": "yes-pipe-package",
+      "description": "yes | piped to package install (auto-accept prompts)",
+      "match": { "command_regex": "yes\\s*\\|\\s*(apt|yum|dnf|brew|choco|winget)" },
+      "action": "warn",
+      "reason": "Auto-accepting package prompts bypasses review"
+    },
+    {
+      "id": "kubectl-delete-namespace",
+      "description": "kubectl delete namespace (cascade)",
+      "match": { "command_regex": "kubectl\\s+delete\\s+(namespace|ns)\\b" },
+      "action": "block",
+      "reason": "Deleting a k8s namespace cascades to every resource in it"
+    },
+    {
+      "id": "kubectl-delete-all",
+      "description": "kubectl delete --all",
+      "match": { "command_regex": "kubectl\\s+delete\\s+.*--all\\b" },
+      "action": "block",
+      "reason": "kubectl --all deletion is dangerous"
+    },
+    {
+      "id": "terraform-destroy",
+      "description": "terraform destroy",
+      "match": { "command_regex": "terraform\\s+destroy" },
+      "action": "block",
+      "reason": "terraform destroy tears down all managed infra"
+    },
+    {
+      "id": "git-amend-published",
+      "description": "git commit --amend (rewriting potentially published commits)",
+      "match": { "command_regex": "git\\s+commit\\s+--amend\\b" },
+      "action": "warn",
+      "reason": "Amending an already-pushed commit will require force-push"
+    },
+    {
+      "id": "npm-publish",
+      "description": "npm publish",
+      "match": { "command_regex": "npm\\s+publish\\b" },
+      "action": "warn",
+      "reason": "npm publish is public and immutable"
+    },
+    {
+      "id": "pypi-upload",
+      "description": "twine upload / python setup.py upload",
+      "match": { "command_regex": "(twine\\s+upload|python\\s+setup\\.py\\s+upload)" },
+      "action": "warn",
+      "reason": "PyPI upload is public and immutable"
+    }
+  ]
+}

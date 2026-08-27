@@ -1,0 +1,10 @@
+{
+  "currentCostUsd": 0.01,
+  "costPerMinute": [[1, 0.01], [2, 0.012], [3, 0.009], [4, 0.011], [5, 0.01]],
+  "recentOutputs": [
+    { "text": "checking the file contents and reporting back", "timestamp": 1 },
+    { "text": "checking the file contents and reporting back", "timestamp": 2 },
+    { "text": "checking the file contents and reporting back", "timestamp": 3 }
+  ],
+  "recentToolCalls": []
+}

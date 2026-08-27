@@ -1,0 +1,23 @@
+# Runtime / local state
+*.log
+*-report-*.md
+*-report-*.json
+state/
+.mcpguard/
+.bashguard/
+.circuitguard/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Scratch
+scratch/
+tmp/

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "fs-server": {
+      "command": "mcp-fs",
+      "args": ["--root", "/workspace"],
+      "tools": [
+        { "name": "read_file", "schema": { "path": "string" } },
+        { "name": "list_dir", "schema": { "path": "string" } }
+      ]
+    }
+  }
+}

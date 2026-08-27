@@ -1,0 +1,10 @@
+{
+  "currentCostUsd": 0.15,
+  "costPerMinute": [[1, 0.01], [2, 0.012], [3, 0.009], [4, 0.011], [5, 0.01]],
+  "recentOutputs": [
+    { "text": "checking the file now", "timestamp": 1 },
+    { "text": "compute the average", "timestamp": 2 },
+    { "text": "write a summary", "timestamp": 3 }
+  ],
+  "recentToolCalls": []
+}

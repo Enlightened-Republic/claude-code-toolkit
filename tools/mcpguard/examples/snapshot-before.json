@@ -1,0 +1,6 @@
+{
+  "canonical": [
+    { "key": "a", "type": "number" },
+    { "key": "b", "type": "string" }
+  ]
+}
